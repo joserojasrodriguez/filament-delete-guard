@@ -25,5 +25,7 @@
         "Joserojasrodriguez\\FilamentDeleteGuard\\FilamentDeleteGuardServiceProvider"
       ]
     }
-  }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
 }
