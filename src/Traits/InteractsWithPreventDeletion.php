@@ -66,4 +66,24 @@ trait InteractsWithPreventDeletion
             ]);
     }
 
+    public function showDeleteAction(): bool
+    {
+        try {
+            $this->ensureCanBeDeleted();
+            return true;
+        }catch (CannotDeleteModelException){
+            return false;
+        }
+    }
+
+    public function showDeleteActionMessage(): ?string
+    {
+        try {
+            $this->ensureCanBeDeleted();
+        }catch (CannotDeleteModelException $exception){
+            return $exception->getMessage();
+        }
+        return null;
+    }
+
 }
