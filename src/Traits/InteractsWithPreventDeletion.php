@@ -8,7 +8,7 @@ use Joserojasrodriguez\FilamentDeleteGuard\Exceptions\CannotDeleteModelException
 
 trait InteractsWithPreventDeletion
 {
-    protected static function bootInteractsWithUppercase(): void
+    protected static function bootInteractsWithPreventDeletion(): void
     {
         static::deleting(function ($model) {
             $model->ensureCanBeDeleted();
