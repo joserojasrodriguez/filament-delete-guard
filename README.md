@@ -1,20 +1,20 @@
 # filament-delete-guard
 
-Prevent unsafe deletions in Filament by enforcing deletion rules at the **model** level and showing a friendly Filament notification when deletion is blocked.
+Prevent unsafe deletions in Filament by enforcing deletion rules at the **model** level and showing friendly notifications when deletion is blocked.
 
 ---
 
-## What it does
+## What does it do?
 
 This package provides:
 
 - A small **contract** (`HasPreventDeletion`) to describe deletion rules.
 - A **trait** (`InteractsWithPreventDeletion`) with the core logic to validate relations and custom rules.
-- A `CannotDeleteModelException` you can throw to block deletion.
-- A Filament integration that **customizes `DeleteAction`** to:
+- A `CannotDeleteModelException` to block deletion.
+- Filament integration that **customizes `DeleteAction`** to:
   - disable the action (optional),
   - show a tooltip (optional),
-  - attempt `$record->delete()` and, if blocked, show a Filament **danger notification**.
+  - attempt `$record->delete()` and, if blocked, show a Filament notification.
 
 ---
 
@@ -24,13 +24,13 @@ This package provides:
 composer require joserojasrodriguez/filament-delete-guard
 ```
 
-The package registers its service provider automatically (Laravel package discovery).
+The package automatically registers its service provider (Laravel package discovery).
 
 ---
 
 ## Usage
 
-### 1) Implement the contract + use the trait
+### 1) Implement the contract and use the trait
 
 In your Eloquent model:
 
@@ -46,9 +46,9 @@ class Invoice extends Model implements HasPreventDeletion
     public function deletionRelations(): array
     {
         return [
-            // relationMethod => human label (used in the default message)
-            'payments' => 'pagos',
-            'lines' => 'líneas',
+            // relation method => human label (used in the default message)
+            'payments' => 'payments',
+            'lines' => 'lines',
         ];
     }
 
@@ -56,58 +56,42 @@ class Invoice extends Model implements HasPreventDeletion
     {
         return [
             // optional per-relation override
-            'payments' => 'No puedes eliminar una factura con pagos asociados.',
+            'payments' => 'You cannot delete an invoice with associated payments.',
         ];
     }
 
     public function customDeletionRules(): void
     {
-        // Optional: put any extra checks here.
-        // If you want to block deletion, throw CannotDeleteModelException.
-        // throw CannotDeleteModelException::because('Esta factura está bloqueada.');
+        // Optional: add any extra checks here.
+        // To block deletion, throw CannotDeleteModelException.
+        // throw CannotDeleteModelException::because('This invoice is locked.');
     }
 }
 ```
 
-### 2) Call the guard before deleting (recommended via model event)
-
-The trait exposes:
-
-- `ensureCanBeDeleted(): void` (calls relation checks + `customDeletionRules()`)
-
-The package does not force how you wire this into your model lifecycle, so the typical approach is a `deleting` hook:
-
-```php
-use Illuminate\Database\Eloquent\Model;
-
-protected static function booted(): void
-{
-    static::deleting(function (self $model): void {
-        $model->ensureCanBeDeleted();
-    });
-}
-```
-
-When deletion must be prevented, throw:
-
-```php
-use Joserojasrodriguez\FilamentDeleteGuard\Exceptions\CannotDeleteModelException;
-
-throw CannotDeleteModelException::because('No se puede eliminar este registro.');
-```
+> **Note:** You do not need to manually add the `deleting` hook in your model. The `InteractsWithPreventDeletion` trait handles it automatically.
 
 ---
 
-## Filament integration details
+## Filament integration
 
-The service provider configures Filament’s `DeleteAction` globally:
+Filament integration globally configures the delete action:
 
-- It calls `$record->delete()` and catches `CannotDeleteModelException`.
-- On exception, it sends a Filament `Notification` with:
+- Calls `$record->delete()` and catches `CannotDeleteModelException`.
+- If the exception occurs, shows a Filament notification with:
   - title: `filament-delete-guard::messages.deletion_prevented`
   - body: the exception message
 
-### Optional: Disable the delete action + show tooltip
+### BulkActions support
+
+The package works with Filament `DeleteBulkAction`.
+
+Each record deletion is executed individually, so the `deleting` event is triggered for every model. If a record throws `CannotDeleteModelException`, Filament counts it as a failed deletion and continues processing the remaining records.
+
+Partial success notifications are automatically handled by Filament.
+
+
+### Optional: Disable the delete action and show tooltip
 
 If your model implements these methods, the delete action can be disabled and display a tooltip:
 
@@ -119,7 +103,7 @@ public function showDeleteAction(): bool
 
 public function showDeleteActionMessage(): ?string
 {
-    return 'No se puede eliminar porque está conciliado.'; // tooltip text
+    return 'Cannot delete because it is reconciled.'; // tooltip text
 }
 ```
 
@@ -127,17 +111,29 @@ public function showDeleteActionMessage(): ?string
 
 ---
 
+## How it works internally
+
+The trait registers a model `deleting` event using Laravel’s trait booting convention:
+
+```php
+protected static function bootInteractsWithPreventDeletion(): void
+{
+    static::deleting(fn ($model) => $model->ensureCanBeDeleted());
+}
+```
+---
+
 ## Translations
 
-The package ships translations under:
+The package ships translations for:
 
 - `filament-delete-guard::messages.deletion_prevented`
 - `filament-delete-guard::messages.has_relation`
 
-Current default messages (es):
+Default messages (en):
 
-- **Eliminación bloqueada**
-- **No se puede eliminar porque tiene :relation asociados.**
+- **Deletion blocked**
+- **Cannot delete because it has :relation associated.**
 
 ---
 
