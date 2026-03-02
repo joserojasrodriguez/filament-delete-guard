@@ -1,4 +1,7 @@
 # filament-delete-guard
+[![Packagist Version](https://img.shields.io/packagist/v/joserojasrodriguez/filament-delete-guard)](https://packagist.org/packages/joserojasrodriguez/filament-delete-guard)
+[![Packagist Downloads](https://img.shields.io/packagist/dt/joserojasrodriguez/filament-delete-guard)](https://packagist.org/packages/joserojasrodriguez/filament-delete-guard)
+[![License](https://img.shields.io/packagist/l/joserojasrodriguez/filament-delete-guard)](https://opensource.org/licenses/MIT)
 
 Prevent unsafe deletions in Filament by enforcing deletion rules at the **model** level and showing friendly notifications when deletion is blocked.
 
